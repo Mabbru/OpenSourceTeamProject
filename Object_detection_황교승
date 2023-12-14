@@ -1,3 +1,4 @@
+# 출처: https://pysource.com/2019/06/27/yolo-object-detection-using-opencv-with-python/
 # YOLO를 이용한 사진속 물체 찾기
 
 import cv2
