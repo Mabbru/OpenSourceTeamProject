@@ -1,3 +1,7 @@
+!wget https://pjreddie.com/media/files/yolov3.weights
+!wget https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg
+!wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/coco.names
+
 import cv2
 import numpy as np
 from google.colab import drive
@@ -29,6 +33,7 @@ model.setInput(blob)
 layer_names = model.getLayerNames()
 unconnected_out_layers = model.getUnconnectedOutLayers()
 
+
 # OpenCV 버전에 따라 반환 값 형식이 다를 수 있음을 고려하여 처리
 if unconnected_out_layers.ndim == 2:  # 리스트의 리스트 형태인 경우
     output_layers = [layer_names[i[0] - 1] for i in unconnected_out_layers]
@@ -37,27 +42,43 @@ else:  # 단일 리스트 형태인 경우
 
 outs = model.forward(output_layers)
 
-# 검출된 객체에 바운더리 박스 추가
+
+# 검출된 객체에 대한 바운더리 박스, 신뢰도, 클래스 ID를 저장할 리스트 생성
+boxes = []
+confidences = []
+class_ids = []
+
+# 검출된 객체 정보 저장
 for out in outs:
     for detection in out:
         scores = detection[5:]
         class_id = np.argmax(scores)
         confidence = scores[class_id]
-        if confidence > 0.5:
-            # 바운더리 박스 계산
+        if confidence > 0.5:  # 신뢰도 임계값
             center_x = int(detection[0] * width)
             center_y = int(detection[1] * height)
             w = int(detection[2] * width)
             h = int(detection[3] * height)
 
-            # 사각형 그리기
             x = int(center_x - w / 2)
             y = int(center_y - h / 2)
-            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-            # 클래스 이름과 신뢰도 추가
-            label = f"{classes[class_id]}: {confidence:.2f}"
-            cv2.putText(image, label, (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            boxes.append([x, y, w, h])
+            confidences.append(float(confidence))
+            class_ids.append(class_id)
+
+# NMS를 적용하여 중복 박스 제거
+indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+
+# 최종 바운더리 박스와 라벨 그리기
+for i in range(len(boxes)):
+    if i in indexes:
+        x, y, w, h = boxes[i]
+        label = str(classes[class_ids[i]])
+        confidence = confidences[i]
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(image, f"{label}: {confidence:.2f}", (x, y - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 # 결과 이미지 표시
 cv2_imshow(image)
+
