@@ -6,7 +6,7 @@ This project aims to develop software for detecting objects within images using 
 
 The software identifies various objects such as people, animals, vehicles, etc., within an image and marks their locations with boundary boxes superimposed on the image. This allows users to easily identify important objects within images.
 
-![Project Demo](result_pictures/peopleanddog2.png)
+[Project Demo](result_pictures/person_and_dog2.png)
 
 ## Features
 
